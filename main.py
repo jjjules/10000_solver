@@ -36,8 +36,8 @@ def test(score, dice: list):
     else:
         # Recurse
         recursive_steps = [([1], 100), ([5], 50), ([2, 3], 50)]  # Taking the usuals with their points
-        recursive_steps += [([2], 0), ([3], 0), ([4], 0), ([5], 0), ([6], 0)]  # Removing useless dice
-        recursive_steps += [([1], 0), ([5], 0)]  # Removing dice ignoring their points
+        # recursive_steps += [([2], 0), ([3], 0), ([4], 0), ([5], 0), ([6], 0)]  # Removing useless dice
+        # recursive_steps += [([1], 0), ([5], 0)]  # Removing dice ignoring their points
         for to_remove, current_score in recursive_steps:
             if all(i in dice for i in to_remove):
                 current_dice = list(dice)
@@ -55,8 +55,6 @@ def test(score, dice: list):
 
 class GameState:
     current_score = 0
-    kept_dice_history: list[int] = []
-    kept_dice: list[int] = []
     available_dice: list[int] = None
 
     def __init__(self) -> None:
@@ -88,27 +86,47 @@ class GameState:
             self.available_dice = []
             self.current_score += 1500
         else:
-            assert len(chosen_dice) > 0
+            assert len(chosen_dice) > 0, "You must specify how you keep the dice."
             chosen_dice = [int(x) for x in chosen_dice]
 
-            """
-                score -> score to add to current score
-                dice -> dice we keep at current game step
-            """
-            if test(score, self.available_dice) and test(score, chosen_dice) and len(chosen_dice) <= len(self.available_dice):
-                self.available_dice = self.available_dice[len(chosen_dice):]
-                self.current_score += score
-            else:
+            dice_sets = [self.available_dice] + self.add_dice_combination(self.available_dice)
+
+            found = False
+            for current_dice in dice_sets:
+                if set(chosen_dice).issubset(current_dice) and test(score, chosen_dice):
+                    self.available_dice = self.available_dice[len(chosen_dice):]
+                    self.current_score += score
+                    found = True
+                    break
+            if not found:
                 raise RuntimeError(f"You tried to keep a score of {score} by keeping {chosen_dice} with a roll of {self.available_dice}. This is not allowed.")
-            
         
         # Main pleine
         if len(self.available_dice) == 0:
             self.new_dice()
-            self.kept_dice_history.extend(self.kept_dice)
-            self.kept_dice = []
         else: 
             self.roll()
+            
+    def add_dice_combination(self, dice_combination) -> list[list[int]]:
+        added_combinations = []
+        if (2 in dice_combination and 3 in dice_combination):
+            new_combination = dice_combination.copy()
+            new_combination.remove(2)
+            new_combination.remove(3)
+            new_combination.append(5)
+            added_combinations.append(new_combination)
+            added_combinations.extend(self.add_dice_combination(new_combination))
+        elif 5 in dice_combination:
+            new_combination = dice_combination.copy()
+            new_combination.remove(5)
+            if 5 in new_combination:
+                new_combination.remove(5)
+                new_combination.append(1)
+                added_combinations.append(new_combination)
+                added_combinations.extend(self.add_dice_combination(new_combination))
+        
+        return added_combinations
+
 
 
 
@@ -116,34 +134,41 @@ class GameState:
         print(f'''
         Current score is {self.current_score:d}
         Available dice: {self.available_dice}
-        Fixed dice: {self.kept_dice}
         ''')
 
     
 def main():
     game = GameState()
-
     game.show()
 
     while True:
         try:
             user_input = input("Enter the dice combinations you want to keep (prepend 'done ' to stop) -> ")
 
-            if not user_input:
-                print('Stopping ...')
-                exit()
+            if not user_input or user_input.startswith('done '):
+                if user_input.startswith('done '):
+                    user_input = user_input[5:]
 
-            if user_input.startswith('done '):
                 stop = True
-                user_input = user_input[5:]
             else:
                 stop = False
-            game.keep(user_input)
+
+            if user_input:
+                game.keep(user_input)
 
             if stop:
-                print(f"You finished with a score of {game.current_score}")
-                exit()
-        
+                if not user_input:
+                    print(f"You lost a score of {game.current_score}")
+                else:
+                    print(f"You finished with a score of {game.current_score}")
+                user_input = input("Would you like to play again (n/Y)? ")
+                if not user_input or user_input.lower() == 'Y' :
+                    print()
+                    print('New game --->')
+                    game = GameState()
+                else:
+                    exit()
+
             game.show()
             print('\n\n\n')
         except KeyboardInterrupt:
