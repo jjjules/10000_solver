@@ -2,6 +2,8 @@
 
 import random
 
+from collections import defaultdict
+
 def roll_dice() -> int:
     """Simulate rolling a single die with a specified number of sides."""
     return random.randint(1, 6)
@@ -57,7 +59,7 @@ class DiceCombinationChecker:
             
             return False
 
-    def combine_and_match(self, available_dice, chosen_score, chosen_dice) -> int:
+    def create_combinations_and_match(self, available_dice, chosen_score, chosen_dice) -> int:
         chosen_score = int(chosen_score)
         chosen_dice = [int(x) for x in chosen_dice]
 
@@ -78,7 +80,7 @@ class DiceCombinationChecker:
         else:
             assert len(chosen_dice) > 0, "You must specify how you keep the dice."
 
-            dice_sets = [available_dice] + self.add_dice_combination(available_dice)
+            dice_sets = self.get_all_dice_combination(available_dice)
 
             found = False
             for current_dice in dice_sets:
@@ -90,24 +92,32 @@ class DiceCombinationChecker:
             else:
                 raise RuntimeError(f"You tried to keep a score of {chosen_score} by keeping {chosen_dice} with a roll of {available_dice}. This is not allowed.")
 
+    # def get_available_actions(self, available_dice):
+    #     actions: dict[int, list[list[int]]] = defaultdict(list)
+    #     data: tuple[int, list[int], list[int]] = []
+
+    #     for current_dice in self.get_all_dice_combination(available_dice):
+    #         for score, combinations in self.up_to_four_dice_combinations.items():
+    #             for combination in combinations:
+    #                 if combination
             
-    def add_dice_combination(self, dice_combination) -> list[list[int]]:
-        added_combinations = []
-        if (2 in dice_combination and 3 in dice_combination):
-            new_combination = dice_combination.copy()
+    def get_all_dice_combination(self, initial_dice) -> list[list[int]]:
+        added_combinations = [initial_dice]
+        if (2 in initial_dice and 3 in initial_dice):
+            new_combination = initial_dice.copy()
             new_combination.remove(2)
             new_combination.remove(3)
             new_combination.append(5)
             added_combinations.append(new_combination)
-            added_combinations.extend(self.add_dice_combination(new_combination))
-        elif 5 in dice_combination:
-            new_combination = dice_combination.copy()
+            added_combinations.extend(self.get_all_dice_combination(new_combination))
+        elif 5 in initial_dice:
+            new_combination = initial_dice.copy()
             new_combination.remove(5)
             if 5 in new_combination:
                 new_combination.remove(5)
                 new_combination.append(1)
                 added_combinations.append(new_combination)
-                added_combinations.extend(self.add_dice_combination(new_combination))
+                added_combinations.extend(self.get_all_dice_combination(new_combination))
         
         return added_combinations
 
@@ -127,7 +137,7 @@ class GameState:
         self.available_dice = [roll_dice() for i in range(len(self.available_dice))]
     
     def keep(self, chosen_score: int, chosen_dice: list[int]):
-        num_used_dice = self.dice_checker.combine_and_match(self.available_dice, chosen_score, chosen_dice)
+        num_used_dice = self.dice_checker.create_combinations_and_match(self.available_dice, chosen_score, chosen_dice)
 
         self.available_dice = self.available_dice[num_used_dice:]
         self.current_score += chosen_score
