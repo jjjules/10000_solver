@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import random
+import numpy as np
 
+from collections import defaultdict
 from multiset import Multiset
 
 def roll_dice() -> int:
@@ -98,6 +100,21 @@ class DiceCombinationChecker:
             else:
                 raise RuntimeError(f"You tried to keep a score of {chosen_score} by keeping {chosen_dice} with a roll of {available_dice}. This is not allowed.")
 
+    # def get_available_actions(self, available_dice):
+    #     actions: dict[int, list[list[int]]] = defaultdict(list)
+    #     data: list[tuple[int, Multiset[int], Multiset[int]]] = []
+
+    #     for current_dice in self.get_all_dice_combination(available_dice):
+    #         if self.is_full_house(current_dice):
+    #             data.append(1500, current_dice, Multiset([]))
+            
+    #         if self.is_grande_suite(current_dice):
+    #             data.append(1500, current_dice, Multiset([]))
+
+    #         for score, combinations in self.up_to_four_dice_combinations.items():
+    #             for combination in combinations:
+    #                 if combination
+            
     def get_all_dice_combination(self, initial_dice: Multiset[int]) -> list[Multiset[int]]:
         added_combinations = [initial_dice]
         if {2, 3}.issubset(initial_dice):
@@ -139,6 +156,26 @@ class GameState:
         Current score is {self.current_score:d}
         Available dice: {sorted(self.available_dice)}
         ''')
+
+
+def check_action_and_get_next_state(dice: np.ndarray[int], action_score: int, chosen_dice_mask: list[bool], num_kept_dice: int):
+    assert len(dice) == len(chosen_dice_mask)
+
+    checker = DiceCombinationChecker()
+    chosen_dice = Multiset(dice[chosen_dice_mask].tolist())
+
+    # First check if what's kept corresponds to the score
+    if not checker.match(action_score, chosen_dice):
+        print(f"Not Allowed !!! The chosen_dice {chosen_dice} does not correspond to a score of {action_score}")
+        return
+    
+    combinations = checker.get_all_dice_combination(chosen_dice)
+    kept_dice = next(filter(lambda x: len(x) == num_kept_dice, combinations), None)
+    if kept_dice is None:
+        print(f"Not Allowed !!! You can't combine {chosen_dice} to keep only {num_kept_dice} of them")
+        return
+    
+    print(f"Success !!! You're keeping {kept_dice}")
 
 
 def main():
