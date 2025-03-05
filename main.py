@@ -1,12 +1,54 @@
 #!/usr/bin/env python3
 
 
+import random
+import numpy as np
 from multiset import Multiset
 
-from .utils import GameState
+from game import GameState
+from environment import GameEnv
 
 def main():
-    game = GameState()
+    
+    np.random.seed(1)
+    random.seed(1)
+
+    env = GameEnv()
+
+    while(True):
+        if env.game_state.is_done:
+            print()
+            print('NEW GAME')
+            print()
+            env = GameEnv()
+        env.render()
+        i1 = int(input('input1 '))
+        i2 = [x == '1' for x in input('input2 ').split(' ')]
+        i3 = int(input('input3 '))
+        i4 = int(input('input4 '))
+        print(i1, i2, i3, i4)
+        env.step((
+            i1,
+            i2,
+            i3,
+            i4,
+        ))
+    exit(0)
+    
+    """
+        5
+        1 1 1 1 1
+        0
+        0
+
+        7
+        1 1 0 1 0
+        2
+        0
+
+
+    """
+
     game.available_dice = Multiset([1,2,3,5,6])
     game.show()
 
