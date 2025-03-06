@@ -1,15 +1,10 @@
+from warnings import warn
+from typing import Optional
 
-import random
 import numpy as np
-
 from multiset import Multiset
 
 TARGET_TIER = 10_000
-
-def roll_dice() -> int:
-    """Simulate rolling a single die with a specified number of sides."""
-    return random.randint(1, 6)
-
 
 class DiceCombinationChecker:
     up_to_four_dice_combinations: dict[int, list[Multiset[int]]] = {
@@ -146,24 +141,32 @@ class GameState:
     num_step: int
     available_dice: Multiset[int]
     reward: int
+    np_random: np.random.Generator
 
     dice_checker = DiceCombinationChecker()
 
-    def __init__(self) -> None:
+    def __init__(self, np_random: Optional[np.random.Generator] = None) -> None:
+        if np_random is None:
+            self.np_random = np.random.default_rng()
+        else:
+            self.np_random = np_random
         self.roll_new_dice(5)
         self.current_score = 0
         self.current_tier = 0
         self.current_number_of_ticks = 0
         self.reward = 0
         self.is_done = False
+
     
     def roll_new_dice(self, num_dice: int) -> None:
-        self.available_dice = Multiset([roll_dice() for i in range(num_dice)])
+        self.available_dice = Multiset(self.np_random.integers(1, 7, num_dice, dtype=int))
     
     def keep(self, chosen_score: int, chosen_dice: Multiset[int]):
         """
             First function made to iterate through the command using command line
         """
+        warn('Old function', DeprecationWarning)
+
         num_used_dice = self.dice_checker.create_combinations_and_match(self.available_dice, chosen_score, chosen_dice)
         if len(self.available_dice) == num_used_dice:
             # Main pleine
@@ -192,6 +195,9 @@ class GameState:
             # It should still be punished to try to make an illegal move?
             # TODO
             pass
+        elif stop and num_dice_left == 0:
+            # Can't stop if "main pleine"
+            illegal == True
         elif not self.dice_checker.match(action_score, chosen_dice):
             # The chosen_dice {chosen_dice} does not correspond to a score of {action_score}
             illegal = True
@@ -205,7 +211,7 @@ class GameState:
             else:
                 if stop:
                     # You can't validate your current score if its not a multiple of 100
-                    illegal = (self.current_score + action_score) % 100 == 0
+                    illegal = (self.current_score + action_score) % 100 != 0
                 else:
                     # Valid move
                     # print(f"Success !!! You're keeping {kept_dice}")
@@ -252,24 +258,12 @@ class GameState:
         
         self.roll_new_dice(num_dice_left)
                 
-    def get_dice_as_numpy(self) -> np.ndarray[int]:
-        """
-            Must be reliable and deterministic as we use a mask
-            Fixed length of 5
-            Return 0 for dice that are not available
-        """
-        available_dice = self.available_dice
-        available_dice_np = np.zeros((5,))
-        available_dice_np[:len(available_dice)] = sorted(available_dice)
-
-        return available_dice_np
-
     def show(self):
         print(f'''
         Current score is {self.current_score:d}
         Current tier is {self.current_tier:d} with {self.current_number_of_ticks} tick(s)
         Current reward is {self.reward:d}
-        Available dice: {sorted(self.available_dice)}
+        Available dice: {[int(i) for i in sorted(self.available_dice)]}
 
         ''')
 
