@@ -49,11 +49,14 @@ class GameEnv(gym.Env):
 
     def step(self, action):
         # Apply action and advance game state
-        self.game_state.keepv2(self.convert_action_to_action_info(action))
+        illegal = self.game_state.take_action(self.convert_action_to_action_info(action))
 
         truncated = False # TODO: ?
 
-        return self._get_obs(), self.game_state.reward, self.game_state.is_done, truncated, self._get_info()
+        info = self._get_info()
+        info['illegal'] = True
+
+        return self._get_obs(), self.game_state.reward, self.game_state.is_done, truncated, info
     
     def convert_action_to_action_info(self, action):
         action_score, chosen_dice_mask, num_dice_left, stop = action

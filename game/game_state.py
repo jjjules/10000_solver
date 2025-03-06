@@ -175,7 +175,7 @@ class GameState:
             self.roll_new_dice(len(self.available_dice) - num_used_dice)
         self.current_score += chosen_score
     
-    def keepv2(self, action_info):
+    def take_action(self, action_info):
 
         chosen_dice = action_info['chosen_dice']
         action_score = action_info['action_score']
@@ -257,6 +257,8 @@ class GameState:
                 num_dice_left = 5
         
         self.roll_new_dice(num_dice_left)
+
+        return illegal
                 
     def show(self):
         print(f'''
