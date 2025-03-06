@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 
 
-import random
-import numpy as np
 from multiset import Multiset
 
+import numpy as np
+import gymnasium as gym
+
 from game import GameState
-from environment import GameEnv
+from rl import GameEnv
 
 def main():
     
-    np.random.seed(1)
-    random.seed(1)
-
+    gym.register(
+        id="gymnasium_env/10000-v0",
+        entry_point=GameEnv,
+    )
     env = GameEnv()
+    env.reset(seed=2)
 
     while(True):
         if env.game_state.is_done:
@@ -22,30 +25,34 @@ def main():
             print()
             env = GameEnv()
         env.render()
-        i1 = int(input('input1 '))
-        i2 = [x == '1' for x in input('input2 ').split(' ')]
-        i3 = int(input('input3 '))
-        i4 = int(input('input4 '))
-        print(i1, i2, i3, i4)
-        env.step((
-            i1,
-            i2,
-            i3,
-            i4,
-        ))
+        correct = False
+        while(not correct):
+            try:
+                user_input = input("Select your move (score_to_keep-dice_to_keep-num_dice_kept-end_turn): ")
+                score_to_keep, dice_to_keep, num_dice_left, end_turn = user_input.split('-')
+                dice_to_keep = [x == '1' for x in dice_to_keep]
+                num_dice_left = int(num_dice_left)
+                end_turn = end_turn == '1'
+
+                assert len(dice_to_keep) == 5
+                correct = True
+            except Exception as e:
+                print('ERROR:', e)
+                continue
+
+        env.step((score_to_keep, dice_to_keep, num_dice_left, end_turn))
     exit(0)
     
     """
-        5
-        1 1 1 1 1
-        0
-        0
+        Inputs for good game start:
 
-        7
-        1 1 0 1 0
-        2
-        0
-
+        300-11111-0-0
+        400-11100-2-0
+        100-10000-1-1
+        550-11111-0-0
+        100-10000-4-0
+        200-11110-0-0
+        1050-11110-1-1
 
     """
 
