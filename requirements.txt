@@ -1,3 +1,6 @@
 multiset
 numpy
 gymnasium
+torch
+ray[rllib]
+ipywidgets

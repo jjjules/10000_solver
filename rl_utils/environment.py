@@ -9,7 +9,7 @@ from game import GameState
 
 
 class GameEnv(gym.Env):
-    def __init__(self):
+    def __init__(self, config=None):
         # self.game_state = GameState()
 
         self.action_space = Tuple([
